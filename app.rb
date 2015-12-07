@@ -1,15 +1,16 @@
 require 'httparty'
+require 'rest-client'
 require_relative "env.rb"
 
 class Spotify
-  include HTTParty
+  # include HTTParty
   def initialize(token)
       headers = {
         "Authorization" => "Bearer #{token}",
         "Accept" => "application/json"
      }
       puts headers
-     response = HTTParty.get("https://api.spotfiy.com/vi/me", headers: headers)
+     response = RestClient.get("https://api.spotfiy.com/vi/me")
   end
 
 end
