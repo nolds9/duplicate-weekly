@@ -1,17 +1,17 @@
 require 'httparty'
-require 'rest-client'
 require_relative "env.rb"
 
 class Spotify
   include HTTParty
   attr_accessor :user, :playlists
+
   def initialize(token)
     @headers = {
       "Authorization" => "Bearer #{token}",
-      "Accept" => "application/json"
+      "Accept" => "application/json",
+      "Content-type" => "application/json"
     }
-    response = HTTParty.get("https://api.spotify.com/v1/me", headers: @headers)
-    @user = response
+    @user = HTTParty.get("https://api.spotify.com/v1/me", headers: @headers)
   end
 
   def playlists
@@ -27,38 +27,23 @@ class Spotify
 
   def duplicate(playlist)
     url = playlist["tracks"]["href"]
-
-    id = @user["id"]
     # get a playlist's tracks
     tracks = HTTParty.get(url, headers: @headers)["items"]
-    # p tracks
-    # p "https://api.spotify.com/v1/users/#{id}/playlists/#{playlist_id}/tracks"
-
+    id = @user["id"]
+    # create new playlist
     new_playlist = HTTParty.post("https://api.spotify.com/v1/users/#{id}/playlists", body: {
       name: Time.now.strftime("%Y-%m-%d"),
       public: false
     }.to_json, headers: @headers)
-
     new_playlist_id = new_playlist["id"]
-    uris = tracks.map{|t| t["track"]["uri"]}.join(",").gsub(":", "%3A")
+    # store each track's uri as an array
+    uris = tracks.map{|t| t["track"]["uri"]}
+    # add tracks to new playlist
     added_tracks = HTTParty.post("https://api.spotify.com/v1/users/#{id}/playlists/#{new_playlist_id}/tracks", body: {
       uris: uris
-    }.to_json, headers: @headers, debug_output: $stdout)
-
-    p added_tracks
-
+    }.to_json, headers: @headers)
   end
 end
 
 s = Spotify.new(SPOTIFY_TOKEN)
-discover_weekly = s.discover_weekly
-# p tracks = discover_weekly["tracks"]["href"]
- s.duplicate(discover_weekly)
-
-# create new playlist
-
-# for each track in s.discover_weekly
-
-# add track to new playlist
-
-# new method duplicate
+s.duplicate(s.discover_weekly)
