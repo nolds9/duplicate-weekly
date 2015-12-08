@@ -1,49 +1,31 @@
 require 'httparty'
-require_relative "env.rb"
+require 'sinatra'
+require 'sinatra/reloader'
+require_relative "env"
+require_relative "models/spotify"
+also_reload "models/spotify.rb"
+require "base64"
 
-class Spotify
-  include HTTParty
-  attr_accessor :user, :playlists
+BASE64_ENCODED_ID_SECRET = Base64.encode64(CLIENT_ID+":"+CLIENT_SECRET)
 
-  def initialize(token)
-    @headers = {
-      "Authorization" => "Bearer #{token}",
-      "Accept" => "application/json",
-      "Content-type" => "application/json"
-    }
-    @user = HTTParty.get("https://api.spotify.com/v1/me", headers: @headers)
-  end
-
-  def playlists
-    response = HTTParty.get("https://api.spotify.com/v1/me/playlists", headers: @headers)
-    @playlists = response["items"]
-  end
-
-  def discover_weekly
-    self.playlists.select { |playlist|
-      playlist["name"] == "Discover Weekly"
-    }[0]
-  end
-
-  def duplicate(playlist)
-    url = playlist["tracks"]["href"]
-    # get a playlist's tracks
-    tracks = HTTParty.get(url, headers: @headers)["items"]
-    id = @user["id"]
-    # create new playlist
-    new_playlist = HTTParty.post("https://api.spotify.com/v1/users/#{id}/playlists", body: {
-      name: Time.now.strftime("%Y-%m-%d"),
-      public: false
-    }.to_json, headers: @headers)
-    new_playlist_id = new_playlist["id"]
-    # store each track's uri as an array
-    uris = tracks.map{|t| t["track"]["uri"]}
-    # add tracks to new playlist
-    added_tracks = HTTParty.post("https://api.spotify.com/v1/users/#{id}/playlists/#{new_playlist_id}/tracks", body: {
-      uris: uris
-    }.to_json, headers: @headers)
-  end
+get "/" do
+  @auth_url = "https://accounts.spotify.com/authorize?client_id=#{CLIENT_ID}&response_type=code&redirect_uri=#{REDIRECT_URI}"
+  erb :index
 end
 
-s = Spotify.new(SPOTIFY_TOKEN)
-s.duplicate(s.discover_weekly)
+get "/auth/spotify/callback" do
+  body = {
+    "grant_type" => 'authorization_code',
+    code: params[:code],
+    redirect_uri: REDIRECT_URI
+  }
+  p body.to_json
+  res = HTTParty.post("https://accounts.spotify.com/api/token", params: body.to_json, headers: {
+    "Authorization" => "Basic #{BASE64_ENCODED_ID_SECRET}",
+    "Accept" => "application/json"
+  })
+  p res
+  
+end
+#s = Spotify.new(SPOTIFY_TOKEN)
+#s.duplicate(s.discover_weekly)
