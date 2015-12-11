@@ -6,11 +6,19 @@ require_relative "models/spotify"
 also_reload "models/spotify.rb"
 require "base64"
 
-BASE64_ENCODED_ID_SECRET = Base64.encode64(CLIENT_ID+":"+CLIENT_SECRET)
+enable :sessions
+set :session_secret, "ninja please"
+
+BASE64_ENCODED_ID_SECRET = Base64.strict_encode64(CLIENT_ID+":"+CLIENT_SECRET)
 
 get "/" do
   @auth_url = "https://accounts.spotify.com/authorize?client_id=#{CLIENT_ID}&response_type=code&redirect_uri=#{REDIRECT_URI}"
+  p session[:access_token]
   erb :index
+end
+
+get "/duplicate" do
+  session[:access_token]
 end
 
 get "/auth/spotify/callback" do
@@ -19,13 +27,10 @@ get "/auth/spotify/callback" do
     code: params[:code],
     redirect_uri: REDIRECT_URI
   }
-  p body.to_json
-  res = HTTParty.post("https://accounts.spotify.com/api/token", params: body.to_json, headers: {
+  res = HTTParty.post("https://accounts.spotify.com/api/token", body: body, headers: {
     "Authorization" => "Basic #{BASE64_ENCODED_ID_SECRET}",
-    "Accept" => "application/json"
+    "Content-Type" => "application/x-www-form-urlencoded"
   })
-  p res
-  
+  session[:access_token] = res["access_token"]
+  redirect "/duplicate"
 end
-#s = Spotify.new(SPOTIFY_TOKEN)
-#s.duplicate(s.discover_weekly)
