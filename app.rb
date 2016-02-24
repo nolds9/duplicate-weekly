@@ -2,6 +2,7 @@ require 'httparty'
 require 'sinatra'
 require 'sinatra/reloader'
 require_relative "env"
+require 'pry'
 require_relative "models/spotify"
 also_reload "models/spotify.rb"
 require "base64"
@@ -12,7 +13,7 @@ set :session_secret, "ninja please"
 BASE64_ENCODED_ID_SECRET = Base64.strict_encode64(CLIENT_ID+":"+CLIENT_SECRET)
 
 get "/" do
-  @auth_url = "https://accounts.spotify.com/authorize?client_id=#{CLIENT_ID}&response_type=code&redirect_uri=#{REDIRECT_URI}"
+  @auth_url = "https://accounts.spotify.com/authorize?client_id=#{CLIENT_ID}&response_type=code&redirect_uri=#{REDIRECT_URI}&scope=playlist-modify-private"
   erb :index
 end
 

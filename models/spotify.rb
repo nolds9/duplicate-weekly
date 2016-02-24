@@ -24,6 +24,7 @@ class Spotify
 
   def duplicate(playlist)
     url = playlist["tracks"]["href"]
+
     # get a playlist's tracks
     tracks = HTTParty.get(url, headers: @headers)["items"]
     id = @user["id"]
