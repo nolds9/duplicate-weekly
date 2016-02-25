@@ -10,5 +10,6 @@ class User < ActiveRecord::Base
       "Authorization" => "Basic #{BASE64_ENCODED_ID_SECRET}",
       "Content-Type" => "application/x-www-form-urlencoded"
     })
+    return res["access_token"]
   end
 end

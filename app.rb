@@ -20,12 +20,6 @@ get "/" do
   erb :index
 end
 
-get "/duplicate" do
-  s = Spotify.new(session[:access_token])
-  p s.duplicate(s.discover_weekly)
-  session[:access_token]
-end
-
 get "/auth/spotify/callback" do
   body = {
     "grant_type" => 'authorization_code',
@@ -45,5 +39,5 @@ get "/auth/spotify/callback" do
     @user.refresh_token = res["refresh_token"]
     @user.save
 
-  redirect "/duplicate"
+  redirect "/"
 end
