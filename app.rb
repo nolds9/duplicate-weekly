@@ -1,11 +1,14 @@
-require 'httparty'
 require 'sinatra'
 require 'sinatra/reloader'
-require_relative "env"
-require 'pry'
-require_relative "models/spotify"
-also_reload "models/spotify.rb"
+require 'sinatra/activerecord'
+require 'httparty'
 require "base64"
+require 'pry'
+
+require_relative "env"
+require_relative "models/spotify"
+require_relative "models/user"
+also_reload "models/spotify.rb"
 
 enable :sessions
 set :session_secret, "ninja please"
@@ -33,6 +36,14 @@ get "/auth/spotify/callback" do
     "Authorization" => "Basic #{BASE64_ENCODED_ID_SECRET}",
     "Content-Type" => "application/x-www-form-urlencoded"
   })
+
   session[:access_token] = res["access_token"]
+
+  # grab refresh_token and store in DB
+    user = Spotify.new(res["access_token"]).user
+    @user = User.find_or_create_by(sid: user["id"] )
+    @user.refresh_token = res["refresh_token"]
+    @user.save
+
   redirect "/duplicate"
 end
