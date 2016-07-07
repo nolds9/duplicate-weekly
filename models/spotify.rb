@@ -23,6 +23,8 @@ class Spotify
   end
 
   def duplicate(playlist)
+    # TODO: What if discover_weekly is not public?
+    # TODO: Why not one global accumulating playlist
     url = playlist["tracks"]["href"]
 
     # get a playlist's tracks
